@@ -132,7 +132,7 @@ func (comp *Component) SendMsgToParent(msg interface{}) {
     comp.Debug("sendtoParent: " + string(data))
     fmt.Fprintf(os.Stdout, string(data)+"\n")
     fmt.Fprintf(os.Stdout, "end\n")
-    os.Stdout.Sync()
+    //os.Stdout.Sync()
 }
 
 func (comp *Component) Sync() {
