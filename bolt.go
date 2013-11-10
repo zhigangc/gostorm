@@ -5,7 +5,7 @@ type Bolt interface {
 	ReadTuple()*Tuple
 	Process(*Tuple)
 	Debug(string)
-	//Ack(string)
+	Ack(string)
 }
 
 func RunBolt(b Bolt) {
@@ -13,6 +13,6 @@ func RunBolt(b Bolt) {
     for {
     	tup := b.ReadTuple()
     	b.Process(tup)
-    	//b.Ack(tup.Id)
+    	b.Ack(tup.Id)
     }
 }
