@@ -5,7 +5,6 @@ import "encoding/json"
 import "syscall"
 import "fmt"
 import "io/ioutil"
-import "io"
 import "bufio"
 
 type Component struct {
@@ -16,6 +15,7 @@ type Component struct {
 	debug *bufio.Writer
     Type string
     Anchor *Tuple
+    reader *bufio.Reader
 }
 
 func (comp *Component) Debug(info string) {
@@ -29,8 +29,9 @@ func (comp *Component) Init(typ string) {
 		panic(err.Error())
 	}
 	comp.debug = bufio.NewWriter(tmpfile)
+    comp.reader = bufio.NewReader(os.Stdin)
 
-	setupInfo := comp.ReadValues(os.Stdin)
+	setupInfo := comp.ReadValues()
     pidDir, _ := setupInfo.GetString("pidDir")
     comp.SendPid(pidDir)
     conf, _ := setupInfo.GetValues("conf")
@@ -38,6 +39,7 @@ func (comp *Component) Init(typ string) {
     comp.Conf = conf
     comp.Context = context
     comp.Type = typ
+    comp.reader = bufio.NewReader(os.Stdin)
 }
 
 func (comp *Component) SetAnchor(anchor *Tuple) {
@@ -52,15 +54,14 @@ func (comp *Component) ReadTuple() *Tuple {
     return NewTuple(vals)
 }
 
-func (comp *Component) ReadMsg(r io.Reader) []byte {
+func (comp *Component) ReadMsg() []byte {
     var msgBuf []byte
-    bio := bufio.NewReader(r)
     for {
         var line []byte
-        data, hasMore, err := bio.ReadLine()
+        data, hasMore, err := comp.reader.ReadLine()
         for hasMore {
         	line = append(line, data...)
-            data, hasMore, err = bio.ReadLine()
+            data, hasMore, err = comp.reader.ReadLine()
         }
         line = append(line, data...)
         if err != nil {
@@ -75,8 +76,8 @@ func (comp *Component) ReadMsg(r io.Reader) []byte {
     return msgBuf
 }
 
-func (comp *Component) ReadValues(r io.Reader) Values {
-	msg := comp.ReadMsg(r)
+func (comp *Component) ReadValues() Values {
+	msg := comp.ReadMsg()
 	vals, err := ParseValues(msg)
     if err != nil {
     	panic(err.Error())
@@ -90,7 +91,7 @@ func (comp *Component) ReadTaskIds() TaskIds {
         first, comp.PendingTaskids = comp.PendingTaskids[0], comp.PendingTaskids[1:]
         return first
     } else {
-        msg := comp.ReadMsg(os.Stdin)
+        msg := comp.ReadMsg()
         for {
         	vals, err := ParseValues(msg)
             if err != nil {
@@ -98,7 +99,7 @@ func (comp *Component) ReadTaskIds() TaskIds {
             }
             comp.Debug("ReadTaskIds got a command:" + string(msg))
             comp.PendingCommands = append(comp.PendingCommands, vals)
-            msg = comp.ReadMsg(os.Stdin)
+            msg = comp.ReadMsg()
         }
         comp.Debug("readTaskIds:" + string(msg))
         taskIds, err := ParseTaskIds(msg)
@@ -115,15 +116,17 @@ func (comp *Component) ReadCommand() Values {
         first, comp.PendingCommands = comp.PendingCommands[0], comp.PendingCommands[1:]
         return first
     } else {
-        msg := comp.ReadMsg(os.Stdin)
+        msg := comp.ReadMsg()
         for {
             taskIds, err := ParseTaskIds(msg)
             if err != nil {
                 break
             }
+            comp.Debug("ReadCommand got a taskid:" + string(msg))
             comp.PendingTaskids = append(comp.PendingTaskids, taskIds)
-            msg = comp.ReadMsg(os.Stdin)
+            msg = comp.ReadMsg()
         }
+        comp.Debug("ReadCommand:" + string(msg))
         vals, err := ParseValues(msg)
         if err != nil {
             panic(err.Error())
@@ -141,7 +144,7 @@ func (comp *Component) SendMsgToParent(msg interface{}) {
     comp.Debug("sendtoParent: " + string(data))
     fmt.Fprintf(os.Stdout, string(data)+"\n")
     fmt.Fprintf(os.Stdout, "end\n")
-    //os.Stdout.Sync()
+    os.Stdout.Sync()
 }
 
 func (comp *Component) Sync() {
