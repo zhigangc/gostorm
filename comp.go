@@ -80,18 +80,28 @@ func (comp *Component) ReadValues(r io.Reader) Values {
 
 func (comp *Component) ReadTaskIds() TaskIds {
     if len(comp.PendingTaskids) > 0 {
+        if comp.Type == "bolt" {
+            comp.Log("read from pending")
+        }
         var first TaskIds
         first, comp.PendingTaskids = comp.PendingTaskids[0], comp.PendingTaskids[1:]
         return first
     } else {
+        if comp.Type == "bolt" {
+            comp.Log("ReadMsg")
+        }
         msg := comp.ReadMsg(os.Stdin)
         for {
         	vals, err := ParseValues(msg)
             if err != nil {
                 break
             }
+            comp.Log("ReadMsg got a command")
             comp.PendingCommands = append(comp.PendingCommands, vals)
             msg = comp.ReadMsg(os.Stdin)
+        }
+        if comp.Type == "bolt" {
+            comp.Log("ReadMsg got a task")
         }
         taskIds, err := ParseTaskIds(msg)
         if err != nil {
