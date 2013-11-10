@@ -15,6 +15,7 @@ type Component struct {
 	PendingTaskids []TaskIds
 	debug *bufio.Writer
     Type string
+    Anchor *Tuple
 }
 
 func (comp *Component) Debug(info string) {
@@ -22,8 +23,8 @@ func (comp *Component) Debug(info string) {
 	comp.debug.Flush()
 }
 
-func (comp *Component) Init(who string) {
-	tmpfile, err := os.OpenFile("/tmp/go.out."+who, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+func (comp *Component) Init(typ string) {
+	tmpfile, err := os.OpenFile("/tmp/go.out."+typ, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -36,6 +37,11 @@ func (comp *Component) Init(who string) {
     context, _ := setupInfo.GetValues("context")
     comp.Conf = conf
     comp.Context = context
+    comp.Type = typ
+}
+
+func (comp *Component) SetAnchor(anchor *Tuple) {
+    comp.Anchor = anchor
 }
 
 func (comp *Component) Run() {}
@@ -80,29 +86,21 @@ func (comp *Component) ReadValues(r io.Reader) Values {
 
 func (comp *Component) ReadTaskIds() TaskIds {
     if len(comp.PendingTaskids) > 0 {
-        if comp.Type == "bolt" {
-            comp.Log("read from pending")
-        }
         var first TaskIds
         first, comp.PendingTaskids = comp.PendingTaskids[0], comp.PendingTaskids[1:]
         return first
     } else {
-        if comp.Type == "bolt" {
-            comp.Log("ReadMsg")
-        }
         msg := comp.ReadMsg(os.Stdin)
         for {
         	vals, err := ParseValues(msg)
             if err != nil {
                 break
             }
-            comp.Log("ReadMsg got a command")
+            comp.Debug("ReadTaskIds got a command:" + string(msg))
             comp.PendingCommands = append(comp.PendingCommands, vals)
             msg = comp.ReadMsg(os.Stdin)
         }
-        if comp.Type == "bolt" {
-            comp.Log("ReadMsg got a task")
-        }
+        comp.Debug("readTaskIds:" + string(msg))
         taskIds, err := ParseTaskIds(msg)
         if err != nil {
             panic(err.Error())
@@ -194,13 +192,12 @@ func (comp *Component) Emit(data []string, stream string, id string, directTask 
     if directTask != 0 {
     	m.Set("task", directTask)	
     }
+    anchorIds := make([]string, 0, 1)
+    if comp.Anchor != nil {
+        anchorIds = append(anchorIds, comp.Anchor.Id)
+    }
+    m.Set("anchors", anchorIds)
     m.Set("tuple", data)
     comp.SendMsgToParent(m)
-    if comp.Type == "bolt" {
-        comp.Log("SendMsgToParent")
-    }
     comp.ReadTaskIds()
-    if comp.Type == "bolt" {
-        comp.Log("ReadTaskIds")
-    }
 }

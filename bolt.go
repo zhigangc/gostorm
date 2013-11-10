@@ -7,16 +7,18 @@ type Bolt interface {
 	Debug(string)
 	Ack(string)
     Log(string)
+    SetAnchor(*Tuple)
 }
 
 func RunBolt(b Bolt) {
     b.Init("bolt")
     for {
-        b.Log("bolt.ReadTuple")
+        b.Debug("bolt.ReadTuple")
     	tup := b.ReadTuple()
-        b.Log("bolt.Process")
+        b.SetAnchor(tup)
+        b.Debug("bolt.Process")
     	b.Process(tup)
-        b.Log("bolt.Ack")
+        b.Debug("bolt.Ack")
     	b.Ack(tup.Id)
     }
 }
