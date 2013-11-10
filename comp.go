@@ -14,6 +14,7 @@ type Component struct {
 	PendingCommands []Values
 	PendingTaskids []TaskIds
 	debug *bufio.Writer
+    Type string
 }
 
 func (comp *Component) Debug(info string) {
@@ -185,5 +186,11 @@ func (comp *Component) Emit(data []string, stream string, id string, directTask 
     }
     m.Set("tuple", data)
     comp.SendMsgToParent(m)
+    if comp.Type == "bolt" {
+        comp.Log("SendMsgToParent")
+    }
     comp.ReadTaskIds()
+    if comp.Type == "bolt" {
+        comp.Log("ReadTaskIds")
+    }
 }
