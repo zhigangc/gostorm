@@ -14,7 +14,6 @@ func RunSpout(s Spout) {
 	s.Init("spout")
     for {
     	cmd := s.ReadCommand()
-    	s.Debug("read command:" + cmd.String())
     	if val, ok := cmd.GetString("command"); ok {
     		if val == "next" {
     			s.NextTuple()

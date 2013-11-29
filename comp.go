@@ -97,11 +97,9 @@ func (comp *Component) ReadTaskIds() TaskIds {
             if err != nil {
                 break
             }
-            comp.Debug("ReadTaskIds got a command:" + string(msg))
             comp.PendingCommands = append(comp.PendingCommands, vals)
             msg = comp.ReadMsg()
         }
-        comp.Debug("readTaskIds:" + string(msg))
         taskIds, err := ParseTaskIds(msg)
         if err != nil {
             panic(err.Error())
@@ -122,11 +120,9 @@ func (comp *Component) ReadCommand() Values {
             if err != nil {
                 break
             }
-            comp.Debug("ReadCommand got a taskid:" + string(msg))
             comp.PendingTaskids = append(comp.PendingTaskids, taskIds)
             msg = comp.ReadMsg()
         }
-        comp.Debug("ReadCommand:" + string(msg))
         vals, err := ParseValues(msg)
         if err != nil {
             panic(err.Error())
@@ -141,7 +137,6 @@ func (comp *Component) SendMsgToParent(msg interface{}) {
     if err != nil {
         panic(err.Error())
     }
-    comp.Debug("sendtoParent: " + string(data))
     fmt.Fprintf(os.Stdout, string(data)+"\n")
     fmt.Fprintf(os.Stdout, "end\n")
     os.Stdout.Sync()
