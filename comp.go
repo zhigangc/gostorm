@@ -18,8 +18,21 @@ type Component struct {
     reader *bufio.Reader
 }
 
-func (comp *Component) Debug(info string) {
-	comp.debug.WriteString(info + "\n")
+func (comp *Component) Debug(prefix string, msg interface{}) {
+    if msg != nil {
+        if str, ok := msg.(string); ok {
+            comp.debug.WriteString(prefix+ ": " + str + "\n")
+        } else {
+        	data, err := json.Marshal(msg)
+            if err != nil {
+                panic(err.Error())
+            }
+            comp.debug.WriteString(prefix+ ": " + string(data) + "\n")
+        }
+    } else {
+        comp.debug.WriteString(prefix+ ": nil\n")
+    }
+    
 	comp.debug.Flush()
 }
 
@@ -51,7 +64,8 @@ func (comp *Component) Process(tup *Tuple) {}
 
 func (comp *Component) ReadTuple() *Tuple {
     vals := comp.ReadCommand()
-    return NewTuple(vals)
+    tup := NewTuple(vals, comp)
+    return tup
 }
 
 func (comp *Component) ReadMsg() []byte {
@@ -178,7 +192,7 @@ func (comp *Component) Log(msg string) {
     comp.SendMsgToParent(vals)
 }
 
-func (comp *Component) Emit(data []string, stream string, id string, directTask int) {
+func (comp *Component) Emit(data []interface{}, stream string, id string, directTask int) {
     m := make(Values)
     m.Set("command", "emit")
     if len(id) > 0 {

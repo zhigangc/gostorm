@@ -4,7 +4,7 @@ type Bolt interface {
 	Init(string)
 	ReadTuple()*Tuple
 	Process(*Tuple)
-	Debug(string)
+	Debug(string, interface{})
 	Ack(string)
     Log(string)
     SetAnchor(*Tuple)

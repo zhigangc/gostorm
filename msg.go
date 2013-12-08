@@ -1,5 +1,7 @@
 package gostorm
 
+import "bytes"
+import "strconv"
 import "encoding/json"
 
 type TaskIds []int
@@ -7,8 +9,10 @@ type Values map[string]interface{}
 
 func ParseValues(data []byte) (Values, error) {
 	var vals Values
-    err := json.Unmarshal(data, &vals)
-	return vals, err
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.UseNumber()
+	err := dec.Decode(&vals)
+    return vals, err
 }
 
 func (vals Values) Set(name string, val interface{}) {
@@ -22,21 +26,19 @@ func (vals Values) GetString(name string) (string, bool) {
 	return "", false
 }
 
-func (vals Values) GetStringList(name string) ([]string, bool) {
+func (vals Values) GetList(name string) ([]interface{}, bool) {
 	if val, ok := vals[name]; ok {
-		items := val.([]interface{})
-		strs := make([]string, 0, len(items))
-		for _, item := range items {
-			strs = append(strs, item.(string))
-		}
-		return strs, true
+		return val.([]interface{}), true
 	}
 	return nil, false
 }
 
 func (vals Values) GetInt(name string) (int, bool) {
 	if val, ok := vals[name]; ok {
-		return int(val.(float64)), true
+		num, err := strconv.ParseInt(string(val.(json.Number)), 10, 64)
+		if err == nil {
+			return int(num), true
+		}
 	}
 	return 0, false
 }

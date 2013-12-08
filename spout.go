@@ -7,7 +7,7 @@ type Spout interface {
 	Fail(string)
 	Sync()
 	ReadCommand() Values
-	Debug(string)
+	Debug(string, interface{})
 }
 
 func RunSpout(s Spout) {

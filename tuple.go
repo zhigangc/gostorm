@@ -7,10 +7,10 @@ type Tuple struct {
 	Component string
 	Stream string
 	Task int
-	Values []string
+	Values []interface{}
 }
 
-func NewTuple(vals Values) *Tuple {
+func NewTuple(vals Values, comp *Component) *Tuple {
 	tup := &Tuple {}
 	if val, ok := vals.GetString("id"); ok {
 		tup.Id = val
@@ -24,7 +24,7 @@ func NewTuple(vals Values) *Tuple {
 	if val, ok := vals.GetInt("task"); ok {
 		tup.Task = val
 	}
-	if val, ok := vals.GetStringList("tuple"); ok {
+	if val, ok := vals.GetList("tuple"); ok {
 		tup.Values = val
 	}
 	return tup
